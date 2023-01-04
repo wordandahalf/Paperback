@@ -1,4 +1,6 @@
-import Palette.Companion.sqr
+package image
+
+import sqr
 import kotlin.math.sqrt
 
 data class Color(

@@ -1,7 +1,7 @@
 /**
  *
  */
-enum class State {
+enum class ConnectionStatus {
     DISCONNECTED,
     SCANNING,
     CONNECTING,

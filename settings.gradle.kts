@@ -14,4 +14,5 @@ pluginManagement {
 }
 
 rootProject.name = "Paperback"
-
+include("src:api")
+findProject(":src:api")?.name = "api"

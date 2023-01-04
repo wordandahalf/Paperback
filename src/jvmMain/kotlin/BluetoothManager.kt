@@ -3,38 +3,43 @@ import com.welie.blessed.BluetoothCentralManagerCallback
 import com.welie.blessed.BluetoothPeripheral
 import com.welie.blessed.ScanResult
 
-object Bluetooth {
+class BluetoothManager(
+    val updateState: (ConnectionStatus) -> Unit
+) {
+    companion object {
+        const val DEVICE_MAC_ADDRESS = "78:E3:6D:0D:5A:BA"
+    }
+
     private val manager =
-        BluetoothCentralManager(Handler).also {
-            it.setRssiThreshold(20)
+        BluetoothCentralManager(Handler()).also {
+//            it.setRssiThreshold(10)
         }
 
-    var Status = ConnectionStatus.DISCONNECTED; private set
-
-    private object Handler : BluetoothCentralManagerCallback() {
+    private inner class Handler : BluetoothCentralManagerCallback() {
         override fun onDiscoveredPeripheral(peripheral: BluetoothPeripheral, scanResult: ScanResult) {
-            if (peripheral.address == "78:E3:6D:0D:5A:BA") {
+            if (peripheral.address == DEVICE_MAC_ADDRESS) {
                 manager.stopScan()
                 peripheral.connect()
             }
         }
 
         override fun onConnectedPeripheral(peripheral: BluetoothPeripheral) {
-            Status = ConnectionStatus.CONNECTED
+            updateState.invoke(ConnectionStatus.CONNECTED)
         }
     }
 
-    fun scan() {
-        manager.scanForPeripherals()
-        Status = ConnectionStatus.SCANNING
+    fun startScan() {
+        manager.scanForPeripheralsWithAddresses(arrayOf(DEVICE_MAC_ADDRESS))
+        updateState.invoke(ConnectionStatus.SCANNING)
     }
 
-    fun stop() {
+    fun stopScan() {
         manager.stopScan()
-        Status = ConnectionStatus.DISCONNECTED
+        updateState.invoke(ConnectionStatus.DISCONNECTED)
     }
 
     fun shutdown() {
-        manager.
+        manager.adapterOff()
+        updateState.invoke(ConnectionStatus.DISCONNECTED)
     }
 }

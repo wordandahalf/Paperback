@@ -9,9 +9,14 @@ import java.awt.image.BufferedImage
 import java.awt.image.BufferedImageOp
 import java.awt.image.ColorModel
 
-class FloydSteinbergDitheringOp(
+/**
+ * A [BufferedImageOp] for converting an image's color space to that of the provided [palette]
+ * using dithering with a [diffusion] approach
+ */
+class BufferedImageDitheringOp(
     private val hints: RenderingHints,
-    private val palette: Palette
+    private val palette: Palette,
+    private val diffusion: DiffusionApproach
 ) : BufferedImageOp {
     @Suppress("NAME_SHADOWING")
     override fun filter(src: BufferedImage, dest: BufferedImage?): BufferedImage {
@@ -26,28 +31,7 @@ class FloydSteinbergDitheringOp(
                 val new = palette.nearest(old)
 
                 dest.setRGB(x, y, new.rgb)
-
-                val error = old - new
-
-                if (x < src.width - 1)
-                    dest.getRGB(x + 1, y).also {
-                        dest.setRGB(x + 1, y, Color(it).plus(error.times(7.0 / 16.0)).rgb)
-                    }
-
-                if (x > 0 && y < src.height - 1)
-                    dest.getRGB(x - 1, y + 1).also {
-                        dest.setRGB(x - 1, y + 1, Color(it).plus(error.times(3.0 / 16.0)).rgb)
-                    }
-
-                if (y < src.height - 1)
-                    dest.getRGB(x, y + 1).also {
-                        dest.setRGB(x, y + 1, Color(it).plus(error.times(5.0 / 16.0)).rgb)
-                    }
-
-                if (x < src.width - 1 && y < src.height - 1)
-                    dest.getRGB(x + 1, y + 1).also {
-                        dest.setRGB(x + 1, y + 1, Color(it).plus(error.times(1.0 / 16.0)).rgb)
-                    }
+                diffusion.diffuse(x, y, old - new, dest)
             }
         }
 
