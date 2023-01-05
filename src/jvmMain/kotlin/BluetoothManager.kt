@@ -11,16 +11,12 @@ class BluetoothManager(
     }
 
     private val manager =
-        BluetoothCentralManager(Handler()).also {
-//            it.setRssiThreshold(10)
-        }
+        BluetoothCentralManager(Handler())
 
     private inner class Handler : BluetoothCentralManagerCallback() {
         override fun onDiscoveredPeripheral(peripheral: BluetoothPeripheral, scanResult: ScanResult) {
-            if (peripheral.address == DEVICE_MAC_ADDRESS) {
-                manager.stopScan()
-                peripheral.connect()
-            }
+            manager.stopScan()
+            peripheral.connect()
         }
 
         override fun onConnectedPeripheral(peripheral: BluetoothPeripheral) {
