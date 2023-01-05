@@ -12,6 +12,7 @@ version = "1.0-SNAPSHOT"
 repositories {
     google()
     mavenCentral()
+    mavenLocal()
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
     maven("https://jitpack.io")
 }
@@ -27,9 +28,12 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
-                implementation("ch.qos.logback:logback-core:+")
-                implementation("ch.qos.logback:logback-classic:+")
-                implementation("com.github.weliem.blessed-bluez:blessed:0.61")
+                implementation(
+                    files("libs/bluecove-2.1.1-SNAPSHOT.jar", "libs/bluecove-bluez-2.1.1-SNAPSHOT.jar", "libs/bluecove-gpl-2.1.1-SNAPSHOT.jar")
+                )
+//                implementation("ch.qos.logback:logback-core:+")
+//                implementation("ch.qos.logback:logback-classic:+")
+//                implementation("com.github.weliem:blessed:1.0-library")
                 implementation("com.sksamuel.scrimage:scrimage-core:4.0.32")
             }
         }
