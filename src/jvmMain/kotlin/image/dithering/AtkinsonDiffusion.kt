@@ -1,41 +1,29 @@
 package image.dithering
 
 import image.Color
-import java.awt.image.BufferedImage
+import image.ColorData
 
 object AtkinsonDiffusion : DiffusionApproach {
     @Suppress("NAME_SHADOWING")
-    override fun diffuse(x: Int, y: Int, error: Color, image: BufferedImage) {
+    override fun diffuse(x: Int, y: Int, error: Color, data: ColorData) {
         val error = error.times(1.0 / 8.0)
 
-        if (x < image.width - 1)
-            image.getRGB(x + 1, y).also {
-                image.setRGB(x + 1, y, Color(it).plus(error).rgb)
-            }
+        if (x < data.width - 1)
+            data.setColor(x + 1, y) { it.plus(error) }
 
-        if (x < image.width - 2)
-            image.getRGB(x + 2, y).also {
-                image.setRGB(x + 2, y, Color(it).plus(error).rgb)
-            }
+        if (x < data.width - 2)
+            data.setColor(x + 2, y) { it.plus(error) }
 
-        if (x > 0 && y < image.height - 1)
-            image.getRGB(x - 1, y + 1).also {
-                image.setRGB(x - 1, y + 1, Color(it).plus(error).rgb)
-            }
+        if (x > 0 && y < data.height - 1)
+            data.setColor(x - 1, y + 1) { it.plus(error) }
 
-        if (y < image.height - 1)
-            image.getRGB(x, y + 1).also {
-                image.setRGB(x, y + 1, Color(it).plus(error).rgb)
-            }
+        if (y < data.height - 1)
+            data.setColor(x, y + 1) { it.plus(error) }
 
-        if (x < image.width - 1 && y < image.height - 1)
-            image.getRGB(x + 1, y + 1).also {
-                image.setRGB(x + 1, y + 1, Color(it).plus(error).rgb)
-            }
+        if (x < data.width - 1 && y < data.height - 1)
+            data.setColor(x + 1, y + 1) { it.plus(error) }
 
-        if (x > 0 && y < image.height - 2)
-            image.getRGB(x - 1, y + 2).also {
-                image.setRGB(x - 1, y + 2, Color(it).plus(error).rgb)
-            }
+        if (x > 0 && y < data.height - 2)
+            data.setColor(x - 1, y + 2) { it.plus(error) }
     }
 }

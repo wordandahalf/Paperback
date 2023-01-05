@@ -1,6 +1,6 @@
 package image.dithering
 
-import image.Color
+import image.ColorData
 import image.palette.Palette
 import java.awt.RenderingHints
 import java.awt.geom.Point2D
@@ -25,13 +25,15 @@ class BufferedImageDitheringOp(
         // Copy data from source
         dest.raster.setRect(src.raster)
 
+        val data = ColorData(dest)
+
         for (y in 0 until src.height) {
             for (x in 0 until src.width) {
-                val old = Color(dest.getRGB(x, y))
+                val old = data.getColor(x, y)
                 val new = palette.nearest(old)
 
-                dest.setRGB(x, y, new.rgb)
-                diffusion.diffuse(x, y, old - new, dest)
+                data.setColor(x, y, new)
+                diffusion.diffuse(x, y, old - new, data)
             }
         }
 
