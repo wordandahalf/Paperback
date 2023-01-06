@@ -1,4 +1,5 @@
 import androidx.compose.desktop.ui.tooling.preview.Preview
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
@@ -6,18 +7,28 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.ApplicationScope
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowState
+import androidx.compose.ui.window.*
+import bluetooth.DeviceManager
+import bluetooth.DeviceStatus
+import image.Image
+import org.jetbrains.skiko.loadBytesFromPath
+import java.awt.FileDialog
+import java.nio.file.Path
 
 @Composable
 @Preview
 fun ApplicationScope.PaperbackApplication() {
-    var status by remember { mutableStateOf(ConnectionStatus.DISCONNECTED) }
-    val manager = BluetoothManager { status = it }
+    var status by remember { mutableStateOf(DeviceStatus.DISCONNECTED) }
+    var image by remember { mutableStateOf<Path?>(null) }
+
+    val manager = DeviceManager { status = it }
 
     Window(
         state = WindowState(size = DpSize(320.dp, 640.dp)),
@@ -25,7 +36,8 @@ fun ApplicationScope.PaperbackApplication() {
     ) {
         MaterialTheme {
             when (status) {
-                ConnectionStatus.CONNECTED -> UploadView(manager)
+                DeviceStatus.CONNECTED ->
+                    UploadView(window, manager, image) { image = it }
                 else -> ConnectView(manager, status)
             }
         }
@@ -34,8 +46,8 @@ fun ApplicationScope.PaperbackApplication() {
 
 @Composable
 fun ConnectView(
-    manager: BluetoothManager,
-    status: ConnectionStatus
+    manager: DeviceManager,
+    status: DeviceStatus
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -53,15 +65,15 @@ fun ConnectView(
 }
 
 private fun handleBluetoothActionButton(
-    manager: BluetoothManager,
-    status: ConnectionStatus
+    manager: DeviceManager,
+    status: DeviceStatus
 ) {
     when (status) {
-        ConnectionStatus.DISCONNECTED ->
+        DeviceStatus.DISCONNECTED ->
             manager.startScan()
-        ConnectionStatus.SCANNING ->
+        DeviceStatus.SCANNING ->
             manager.stopScan()
-        ConnectionStatus.CONNECTING ->
+        DeviceStatus.CONNECTING ->
             manager.shutdown()
         else ->
             throw IllegalStateException()
@@ -70,15 +82,17 @@ private fun handleBluetoothActionButton(
 
 @Composable
 fun BluetoothActionButton(
-    status: ConnectionStatus,
+    status: DeviceStatus,
     onClick: () -> Unit
 ) {
     Button(onClick) {
         when (status) {
-            ConnectionStatus.DISCONNECTED ->
+            DeviceStatus.DISCONNECTED ->
                 Text("Connect")
-            ConnectionStatus.SCANNING, ConnectionStatus.CONNECTING ->
-                Text("Cancel")
+            DeviceStatus.SCANNING ->
+                Text("Scanning...")
+            DeviceStatus.CONNECTING ->
+                Text("Connecting...")
             else ->
                 throw IllegalStateException()
         }
@@ -87,7 +101,10 @@ fun BluetoothActionButton(
 
 @Composable
 fun UploadView(
-    manager: BluetoothManager
+    window: ComposeWindow,
+    manager: DeviceManager,
+    image:   Path?,
+    onImageSelect: (Path) -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -99,10 +116,27 @@ fun UploadView(
         }
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("No photo chosen")
+            Text(image?.fileName?.toString() ?: "No photo chosen")
             Spacer(Modifier.width(4.dp))
-            ChooseFileButton {}
+            ChooseFileButton {
+                val dialog = FileDialog(window).also {
+                    it.setFilenameFilter { _, name ->
+                        listOf("png", "jpg", "jpeg").contains(name.substringAfterLast(".").lowercase())
+                    }
+                    it.isVisible = true
+                }
+
+                dialog.file?.also { onImageSelect.invoke(Path.of(it)) }
+            }
         }
+        Spacer(Modifier.height(8.dp))
+        image?.apply {
+            Image(
+                bitmap = Image.convert(this).awt().toComposeImageBitmap(),
+                "",
+            )
+        }
+        Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             UploadButton(manager) {}
         }
@@ -120,7 +154,7 @@ fun ChooseFileButton(
 
 @Composable
 fun UploadButton(
-    manager: BluetoothManager,
+    manager: DeviceManager,
     onClick: () -> Unit
 ) {
     Button(onClick) {

@@ -1,12 +1,13 @@
 package bluetooth
 
 import java.io.DataOutputStream
+import java.nio.file.Path
 import javax.bluetooth.*
 import javax.microedition.io.Connector
 import javax.microedition.io.StreamConnection
 
-class BluetoothManager(
-    private val updateState: (ConnectionStatus) -> Unit
+class DeviceManager(
+    private val stateHandler: (DeviceStatus) -> Unit,
 ) : DiscoveryListener {
     companion object {
         const val DEVICE_MAC_ADDRESS = "78E36D0D5ABA"
@@ -19,35 +20,40 @@ class BluetoothManager(
         const val COMMAND_SHOW_PREFIX       = 'S'.code.toByte()
     }
 
+    /**
+     * The Bluetooth agent that provides the discovery of devices
+     */
     private val agent = LocalDevice.getLocalDevice().discoveryAgent
+
+    /**
+     * The stream to the connected device
+     */
     private var connection: DataOutputStream? = null
 
     fun startScan() {
-        println("Starting scan...")
         agent.startInquiry(DiscoveryAgent.GIAC, this)
-        updateState.invoke(ConnectionStatus.SCANNING)
+        stateHandler.invoke(DeviceStatus.SCANNING)
     }
 
     fun stopScan() {
         agent.cancelInquiry(this)
-        updateState.invoke(ConnectionStatus.DISCONNECTED)
+        stateHandler.invoke(DeviceStatus.DISCONNECTED)
     }
 
     fun shutdown() {
-        updateState.invoke(ConnectionStatus.DISCONNECTED)
+        stateHandler.invoke(DeviceStatus.DISCONNECTED)
     }
 
     override fun deviceDiscovered(device: RemoteDevice, type: DeviceClass) {
         if (device.bluetoothAddress == DEVICE_MAC_ADDRESS) {
             agent.cancelInquiry(this)
 
-            println("Found device: ${device.bluetoothAddress}")
-            updateState.invoke(ConnectionStatus.CONNECTING)
+            stateHandler.invoke(DeviceStatus.CONNECTING)
 
             val service = agent.selectService(SERVICE_UUID, 0, true)
             connection = (Connector.open(service) as StreamConnection).openDataOutputStream()
 
-            updateState.invoke(ConnectionStatus.CONNECTED)
+            stateHandler.invoke(DeviceStatus.CONNECTED)
 
             identify()
         }

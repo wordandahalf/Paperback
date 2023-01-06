@@ -1,20 +1,20 @@
 package image
 
 import com.sksamuel.scrimage.ImmutableImage
-import image.dithering.AtkinsonDiffusion
-import image.dithering.BufferedImageDitheringOp
+import com.sksamuel.scrimage.Position
+import com.sksamuel.scrimage.ScaleMethod
+import image.dithering.DitheringTransform
 import image.dithering.FloydSteinbergDiffusion
 import image.palette.BuiltinPalette
-import image.palette.RandomPalette
+import java.awt.Color
 import java.nio.file.Path
 
 object Image {
-    const val WIDTH  = 600
-    const val HEIGHT = 448
+    private const val WIDTH  = 600
+    private const val HEIGHT = 448
 
-    fun convert(path: Path): ImmutableImage =
+    fun convert(path: Path) =
         ImmutableImage.loader().fromPath(path)
-            .let {
-                it.op(BufferedImageDitheringOp(it.awt().createGraphics().renderingHints, BuiltinPalette, AtkinsonDiffusion))
-            }
+            .fit(WIDTH, HEIGHT, Color.WHITE, ScaleMethod.Bicubic, Position.Center)
+            .transform(DitheringTransform(BuiltinPalette, FloydSteinbergDiffusion))
 }

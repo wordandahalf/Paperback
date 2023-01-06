@@ -3,9 +3,10 @@ package bluetooth
 /**
  *
  */
-enum class ConnectionStatus {
+enum class DeviceStatus {
     DISCONNECTED,
     SCANNING,
     CONNECTING,
-    CONNECTED
+    CONNECTED,
+    UPLOADING
 }

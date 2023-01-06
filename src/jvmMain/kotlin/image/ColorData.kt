@@ -1,10 +1,12 @@
 package image
 
+import com.sksamuel.scrimage.ImmutableImage
+import com.sksamuel.scrimage.color.RGBColor
 import java.awt.image.BufferedImage
 
 @JvmInline
 value class ColorData(
-    val backing: BufferedImage
+    val backing: ImmutableImage
 ) {
     val width: Int
         get() = backing.width
@@ -13,13 +15,13 @@ value class ColorData(
         get() = backing.height
 
     fun getColor(x: Int, y: Int) =
-        Color(backing.getRGB(x, y))
+        Color(backing.pixel(x, y).argb.and(0xFFFFFF))
 
     fun setColor(x: Int, y: Int, color: Color) {
-        backing.setRGB(x, y, color.rgb)
+        backing.setColor(x, y, RGBColor(color.r, color.g, color.b))
     }
 
     fun setColor(x: Int, y: Int, apply: (Color) -> Color) {
-        backing.setRGB(x, y, apply.invoke(Color(backing.getRGB(x, y))).rgb)
+        backing.setColor(x, y, apply.invoke(getColor(x, y)).let { RGBColor(it.r, it.g, it.b) })
     }
 }
