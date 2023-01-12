@@ -31,9 +31,6 @@ kotlin {
                 implementation(
                     files("libs/bluecove-2.1.1-SNAPSHOT.jar", "libs/bluecove-bluez-2.1.1-SNAPSHOT.jar", "libs/bluecove-gpl-2.1.1-SNAPSHOT.jar")
                 )
-//                implementation("ch.qos.logback:logback-core:+")
-//                implementation("ch.qos.logback:logback-classic:+")
-//                implementation("com.github.weliem:blessed:1.0-library")
                 implementation("com.sksamuel.scrimage:scrimage-core:4.0.32")
             }
         }
