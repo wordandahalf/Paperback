@@ -1,23 +1,15 @@
 package bluetooth
 
-import java.io.DataOutputStream
-import java.nio.file.Path
 import javax.bluetooth.*
 import javax.microedition.io.Connector
 import javax.microedition.io.StreamConnection
 
-class DeviceManager(
+class DeviceConnectionManager(
     private val stateHandler: (DeviceStatus) -> Unit,
 ) : DiscoveryListener {
     companion object {
         const val DEVICE_MAC_ADDRESS = "78E36D0D5ABA"
         val SERVICE_UUID = UUID("0000110100001000800000805F9B34FB", false)
-
-        const val DISPLAY_TYPE: Byte = 25
-
-        const val COMMAND_IDENTIFY_PREFIX   = 'I'.code.toByte()
-        const val COMMAND_NEXT_PREFIX       = 'N'.code.toByte()
-        const val COMMAND_SHOW_PREFIX       = 'S'.code.toByte()
     }
 
     /**
@@ -26,9 +18,9 @@ class DeviceManager(
     private val agent = LocalDevice.getLocalDevice().discoveryAgent
 
     /**
-     * The stream to the connected device
+     * The manager of the connection to the connected device
      */
-    private var connection: DataOutputStream? = null
+    private var connection: DeviceCommunicationManager? = null
 
     fun startScan() {
         agent.startInquiry(DiscoveryAgent.GIAC, this)
@@ -41,6 +33,7 @@ class DeviceManager(
     }
 
     fun shutdown() {
+        connection?.stop()
         stateHandler.invoke(DeviceStatus.DISCONNECTED)
     }
 
@@ -51,11 +44,11 @@ class DeviceManager(
             stateHandler.invoke(DeviceStatus.CONNECTING)
 
             val service = agent.selectService(SERVICE_UUID, 0, true)
-            connection = (Connector.open(service) as StreamConnection).openDataOutputStream()
+            connection =
+                DeviceCommunicationManager(Connector.open(service) as StreamConnection)
+                    .also(DeviceCommunicationManager::identify)
 
             stateHandler.invoke(DeviceStatus.CONNECTED)
-
-            identify()
         }
     }
 
@@ -64,34 +57,4 @@ class DeviceManager(
     override fun serviceSearchCompleted(a: Int, b: Int) {}
 
     override fun inquiryCompleted(p0: Int) {}
-
-    /**
-     * Send the "identify" command
-     */
-    private fun identify() {
-        (connection ?: throw IllegalStateException())
-            .write(
-                byteArrayOf(COMMAND_IDENTIFY_PREFIX, DISPLAY_TYPE)
-            )
-    }
-
-    /**
-     * Send the "next state" command
-     */
-    private fun next() {
-        (connection ?: throw IllegalStateException())
-            .write(
-                byteArrayOf(COMMAND_NEXT_PREFIX)
-            )
-    }
-
-    /**
-     * Send the "show picture" command
-     */
-    private fun show() {
-        (connection ?: throw IllegalStateException())
-            .write(
-                byteArrayOf(COMMAND_SHOW_PREFIX)
-            )
-    }
 }
