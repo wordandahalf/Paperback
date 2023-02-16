@@ -3,6 +3,9 @@ package image
 import sqr
 import kotlin.math.sqrt
 
+/**
+ * A 24-bit RGB color, implemented inline using a single 32-bit integer.
+ */
 @JvmInline
 value class Color(
     val rgb: Int
@@ -11,13 +14,27 @@ value class Color(
         r.shl(16).or(g.shl(8)).or(b)
     )
 
+    /**
+     * The red component of this [Color]
+     */
     val r: Int
         get() = rgb.shr(16).and(0xFF)
+
+    /**
+     * The green component of this [Color]
+     */
     val g: Int
         get() = rgb.shr(8).and(0xFF)
+
+    /**
+     * The blue component of this [Color]
+     */
     val b: Int
         get() = rgb.and(0xFF)
 
+    /**
+     * @return the Cartesian distance between this [Color] and the [other] Color, squared.
+     */
     fun error(other: Color) =
         sqrt((r - other.r).sqr() + (g - other.g).sqr() + (b - other.b).sqr())
 

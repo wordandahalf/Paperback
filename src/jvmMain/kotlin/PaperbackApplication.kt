@@ -116,6 +116,7 @@ fun UploadView(
         }
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
+            // TODO: truncate file name
             Text(image?.fileName?.toString() ?: "No photo chosen")
             Spacer(Modifier.width(4.dp))
             ChooseFileButton {
