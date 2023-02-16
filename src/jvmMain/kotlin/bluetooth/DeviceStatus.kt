@@ -3,10 +3,11 @@ package bluetooth
 /**
  *
  */
-enum class DeviceStatus {
-    DISCONNECTED,
-    SCANNING,
-    CONNECTING,
-    CONNECTED,
-    UPLOADING
+sealed class DeviceStatus {
+    object Disconnected : DeviceStatus()
+    object Scanning : DeviceStatus()
+    object Connecting : DeviceStatus()
+    object Connected : DeviceStatus()
+    data class WaitingForResponse(val next: DeviceStatus) : DeviceStatus()
+    object Uploading : DeviceStatus()
 }

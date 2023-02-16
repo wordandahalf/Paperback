@@ -5,7 +5,8 @@ import javax.microedition.io.Connector
 import javax.microedition.io.StreamConnection
 
 class DeviceConnectionManager(
-    private val stateHandler: (DeviceStatus) -> Unit,
+    internal val status: () -> DeviceStatus,
+    internal val setStatus: (DeviceStatus) -> Unit,
 ) : DiscoveryListener {
     companion object {
         const val DEVICE_MAC_ADDRESS = "78E36D0D5ABA"
@@ -20,35 +21,35 @@ class DeviceConnectionManager(
     /**
      * The manager of the connection to the connected device
      */
-    private var connection: DeviceCommunicationManager? = null
+    var connection: DeviceCommunicationManager? = null; private set
 
     fun startScan() {
         agent.startInquiry(DiscoveryAgent.GIAC, this)
-        stateHandler.invoke(DeviceStatus.SCANNING)
+        setStatus.invoke(DeviceStatus.Scanning)
     }
 
     fun stopScan() {
         agent.cancelInquiry(this)
-        stateHandler.invoke(DeviceStatus.DISCONNECTED)
+        setStatus.invoke(DeviceStatus.Disconnected)
     }
 
     fun shutdown() {
         connection?.stop()
-        stateHandler.invoke(DeviceStatus.DISCONNECTED)
+        setStatus.invoke(DeviceStatus.Disconnected)
     }
 
     override fun deviceDiscovered(device: RemoteDevice, type: DeviceClass) {
         if (device.bluetoothAddress == DEVICE_MAC_ADDRESS) {
             agent.cancelInquiry(this)
 
-            stateHandler.invoke(DeviceStatus.CONNECTING)
+            setStatus.invoke(DeviceStatus.Connecting)
 
             val service = agent.selectService(SERVICE_UUID, 0, true)
             connection =
-                DeviceCommunicationManager(Connector.open(service) as StreamConnection)
+                DeviceCommunicationManager(this, Connector.open(service) as StreamConnection)
                     .also(DeviceCommunicationManager::identify)
 
-            stateHandler.invoke(DeviceStatus.CONNECTED)
+            setStatus.invoke(DeviceStatus.WaitingForResponse(DeviceStatus.Connected))
         }
     }
 

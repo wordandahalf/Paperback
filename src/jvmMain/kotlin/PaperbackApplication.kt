@@ -23,10 +23,10 @@ import java.nio.file.Path
 @Composable
 @Preview
 fun ApplicationScope.PaperbackApplication() {
-    var status by remember { mutableStateOf(DeviceStatus.DISCONNECTED) }
+    var status by remember { mutableStateOf<DeviceStatus>(DeviceStatus.Disconnected) }
     var image by remember { mutableStateOf<Path?>(null) }
 
-    val manager = DeviceConnectionManager { status = it }
+    val manager = DeviceConnectionManager({ status }, { status = it })
 
     Window(
         state = WindowState(size = DpSize(320.dp, 640.dp)),
@@ -34,7 +34,7 @@ fun ApplicationScope.PaperbackApplication() {
     ) {
         MaterialTheme {
             when (status) {
-                DeviceStatus.CONNECTED ->
+                DeviceStatus.Connected ->
                     UploadView(window, manager, image) { image = it }
                 else -> ConnectView(manager, status)
             }
@@ -67,11 +67,11 @@ private fun handleBluetoothActionButton(
     status: DeviceStatus
 ) {
     when (status) {
-        DeviceStatus.DISCONNECTED ->
+        DeviceStatus.Disconnected ->
             manager.startScan()
-        DeviceStatus.SCANNING ->
+        DeviceStatus.Scanning ->
             manager.stopScan()
-        DeviceStatus.CONNECTING ->
+        DeviceStatus.Connecting ->
             manager.shutdown()
         else ->
             throw IllegalStateException()
@@ -85,14 +85,16 @@ fun BluetoothActionButton(
 ) {
     Button(onClick) {
         when (status) {
-            DeviceStatus.DISCONNECTED ->
+            DeviceStatus.Disconnected ->
                 Text("Connect")
-            DeviceStatus.SCANNING ->
+            DeviceStatus.Scanning ->
                 Text("Scanning...")
-            DeviceStatus.CONNECTING ->
+            DeviceStatus.Connecting ->
                 Text("Connecting...")
+            is DeviceStatus.WaitingForResponse ->
+                Text("Waiting for response...")
             else ->
-                throw IllegalStateException()
+                throw IllegalStateException("illegal state ${status::class.java.simpleName}")
         }
     }
 }
@@ -144,7 +146,11 @@ fun UploadView(
         }
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            UploadButton(manager) {}
+            UploadButton {
+                manager.connection?.also {
+                    it.load()
+                }
+            }
         }
     }
 }
@@ -160,7 +166,6 @@ fun ChooseFileButton(
 
 @Composable
 fun UploadButton(
-    manager: DeviceConnectionManager,
     onClick: () -> Unit
 ) {
     Button(onClick) {
