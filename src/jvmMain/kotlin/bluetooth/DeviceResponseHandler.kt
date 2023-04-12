@@ -26,8 +26,12 @@ class DeviceResponseHandler(
         while(running.get()) {
             val available = input.available()
             if (available > 0) {
+                println("Got response.")
+
                 val amount = input.readNBytes(buffer, 0, available)
                 val message = String(buffer, 0, amount)
+
+                println("\"$message\"")
 
                 if (message == ACK_MESSAGE) {
                     val status = manager.status()
@@ -35,6 +39,11 @@ class DeviceResponseHandler(
                     if (status is DeviceStatus.WaitingForResponse)
                         manager.setStatus(status.next)
                 }
+
+                println(manager.status())
+
+                if (manager.status() == DeviceStatus.Displaying)
+                    manager.connection!!.show()
             }
         }
     }

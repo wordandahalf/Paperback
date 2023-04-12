@@ -9,7 +9,9 @@ interface Palette {
     /**
      * The [Color]s in this [Palette]
      */
-    val values: Array<Color>
+    val values: Collection<Color>
+
+    fun index(color: Color): Int?
 
     /**
      * @return the [Color] in [values] nearest to the provided [color]

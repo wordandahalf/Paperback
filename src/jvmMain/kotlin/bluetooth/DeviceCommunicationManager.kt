@@ -1,13 +1,22 @@
 package bluetooth
 
+import com.sksamuel.scrimage.ImmutableImage
+import image.Image
+import image.palette.BuiltinPalette
+import image.toPackedArray
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.file.Path
 import javax.microedition.io.StreamConnection
 
 class DeviceCommunicationManager(
-    manager: DeviceConnectionManager,
+    private val manager: DeviceConnectionManager,
     private val connection: StreamConnection
 ) {
     companion object {
         const val DISPLAY_TYPE: Byte = 25
+
+        const val BATCH_SIZE = 2050
 
         const val COMMAND_IDENTIFY_PREFIX   = 'I'.code.toByte()
         const val COMMAND_NEXT_PREFIX       = 'N'.code.toByte()
@@ -31,28 +40,32 @@ class DeviceCommunicationManager(
      * Send the "identify" command
      */
     fun identify() {
-        println("Identify")
-
         output.write(
             byteArrayOf(COMMAND_IDENTIFY_PREFIX, DISPLAY_TYPE)
         )
     }
 
-    /**
-     * Send the "next state" command
-     */
-    fun next() {
-        output.write(
-            byteArrayOf(COMMAND_NEXT_PREFIX)
-        )
-    }
-
-    fun load() {
+    fun load(image: ImmutableImage) {
+        manager.setStatus(DeviceStatus.Uploading)
         println("Load data")
 
-        output.write(
-            byteArrayOf(COMMAND_LOAD_PREFIX, 3, 0, 6, 0, 0)
-        )
+//        val data = image.toPackedArray(BuiltinPalette)
+
+        val data = ByteArray(Image.WIDTH * Image.HEIGHT / 2)
+        val length = data.size
+
+        val buf = ByteBuffer.allocate(6)
+
+        buf.order(ByteOrder.LITTLE_ENDIAN)
+        buf.put(COMMAND_LOAD_PREFIX)
+        buf.putShort(length.toShort())
+        buf.put(byteArrayOf(length.and(0xFF).toByte(), length.shr(8).and(0xFF).toByte(), length.shr(16).and(0xFF).toByte()))
+
+        output.write(buf.array())
+        output.write(data)
+        output.flush()
+
+        manager.setStatus(DeviceStatus.WaitingForResponse(DeviceStatus.Displaying))
     }
 
     /**
@@ -62,5 +75,7 @@ class DeviceCommunicationManager(
         output.write(
             byteArrayOf(COMMAND_SHOW_PREFIX)
         )
+
+        manager.setStatus(DeviceStatus.WaitingForResponse(DeviceStatus.Connected))
     }
 }

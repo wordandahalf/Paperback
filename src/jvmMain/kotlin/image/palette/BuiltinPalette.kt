@@ -12,5 +12,11 @@ object BuiltinPalette : Palette {
     @JvmStatic val ORANGE  = Color(232, 126, 0)
 
     override val values =
-        arrayOf(BLACK, WHITE, GREEN, BLUE, RED, YELLOW, ORANGE)
+        listOf(BLACK, WHITE, GREEN, BLUE, RED, YELLOW, ORANGE)
+
+    private val palette =
+        mapOf(*values.mapIndexed { i, color -> color to i }.toTypedArray())
+
+    override fun index(color: Color) =
+        palette[color]
 }

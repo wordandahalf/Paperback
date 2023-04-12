@@ -10,4 +10,5 @@ sealed class DeviceStatus {
     object Connected : DeviceStatus()
     data class WaitingForResponse(val next: DeviceStatus) : DeviceStatus()
     object Uploading : DeviceStatus()
+    object Displaying : DeviceStatus()
 }

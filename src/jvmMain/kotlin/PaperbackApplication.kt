@@ -24,7 +24,7 @@ import java.nio.file.Path
 @Preview
 fun ApplicationScope.PaperbackApplication() {
     var status by remember { mutableStateOf<DeviceStatus>(DeviceStatus.Disconnected) }
-    var image by remember { mutableStateOf<Path?>(null) }
+    var imagePath by remember { mutableStateOf<Path?>(null) }
 
     val manager = DeviceConnectionManager({ status }, { status = it })
 
@@ -35,7 +35,7 @@ fun ApplicationScope.PaperbackApplication() {
         MaterialTheme {
             when (status) {
                 DeviceStatus.Connected ->
-                    UploadView(window, manager, image) { image = it }
+                    UploadView(window, manager, imagePath) { imagePath = it }
                 else -> ConnectView(manager, status)
             }
         }
@@ -91,6 +91,8 @@ fun BluetoothActionButton(
                 Text("Scanning...")
             DeviceStatus.Connecting ->
                 Text("Connecting...")
+            DeviceStatus.Displaying ->
+                Text("Displaying...")
             is DeviceStatus.WaitingForResponse ->
                 Text("Waiting for response...")
             else ->
@@ -103,7 +105,7 @@ fun BluetoothActionButton(
 fun UploadView(
     window: ComposeWindow,
     manager: DeviceConnectionManager,
-    image:   Path?,
+    imagePath:   Path?,
     onImageSelect: (Path) -> Unit
 ) {
     Column(
@@ -117,7 +119,7 @@ fun UploadView(
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             // TODO: truncate file name
-            Text(image?.fileName?.toString() ?: "No photo chosen")
+            Text(imagePath?.fileName?.toString() ?: "No photo chosen")
             Spacer(Modifier.width(4.dp))
             ChooseFileButton {
                 val dialog = FileDialog(window).also {
@@ -131,25 +133,21 @@ fun UploadView(
             }
         }
         Spacer(Modifier.height(8.dp))
-        image?.apply {
-            val bitmap =
-                try {
-                    Image.convert(this).awt().toComposeImageBitmap()
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    null
-                }
-
-
-            bitmap?.also {
-                Image(bitmap = it, "")
+        val image = imagePath?.let {
+            try {
+                Image.convert(it)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
             }
         }
-        Spacer(Modifier.height(8.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            UploadButton {
-                manager.connection?.also {
-                    it.load()
+
+        image?.also {
+            Image(it.awt().toComposeImageBitmap(), "")
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                UploadButton {
+                    manager.connection?.load(it)
                 }
             }
         }
