@@ -22,29 +22,38 @@ class DeviceResponseHandler(
 
     override fun run() {
         val buffer = ByteArray(BUF_SIZE)
+        var offset = 0
 
         while(running.get()) {
-            val available = input.available()
-            if (available > 0) {
-                println("Got response.")
+            var available = input.available()
 
-                val amount = input.readNBytes(buffer, 0, available)
-                val message = String(buffer, 0, amount)
-
-                println("\"$message\"")
-
-                if (message == ACK_MESSAGE) {
-                    val status = manager.status()
-
-                    if (status is DeviceStatus.WaitingForResponse)
-                        manager.setStatus(status.next)
-                }
-
-                println(manager.status())
-
-                if (manager.status() == DeviceStatus.Displaying)
-                    manager.connection!!.show()
+            // Read the stream to completion. This is a terribly
+            // inefficient
+            while (available > 0) {
+                buffer[offset++] = input.read().toByte()
+                available = input.available()
             }
+
+            if (offset == 0)
+                continue
+
+            val message = String(buffer, 0, offset)
+
+            println("\"$message\"")
+
+            if (message == ACK_MESSAGE) {
+                val status = manager.status()
+
+                if (status is DeviceStatus.WaitingForResponse)
+                    manager.setStatus(status.next)
+            }
+
+            println(manager.status())
+
+            if (manager.status() == DeviceStatus.Displaying)
+                manager.connection!!.show()
+
+            offset = 0
         }
     }
 }
