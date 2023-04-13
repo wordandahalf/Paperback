@@ -27,7 +27,7 @@ object Image {
 
 fun ImmutableImage.toPackedArray(palette: Palette): ByteArray {
     val length = this.width.times(this.height)
-    val data = ByteArray(length)
+    val data = ByteArray(length / 2)
 
     for (i in 0 until length step 2) {
         val x = i.mod(Image.WIDTH)

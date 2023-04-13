@@ -85,6 +85,8 @@ fun BluetoothActionButton(
 ) {
     Button(onClick) {
         when (status) {
+            DeviceStatus.Error ->
+                Text("Error. Please restart application.")
             DeviceStatus.Disconnected ->
                 Text("Connect")
             DeviceStatus.Scanning ->
@@ -93,6 +95,8 @@ fun BluetoothActionButton(
                 Text("Connecting...")
             DeviceStatus.Displaying ->
                 Text("Displaying...")
+            is DeviceStatus.Uploading ->
+                Text("Uploading...")
             is DeviceStatus.WaitingForResponse ->
                 Text("Waiting for response...")
             else ->
@@ -123,9 +127,9 @@ fun UploadView(
             Spacer(Modifier.width(4.dp))
             ChooseFileButton {
                 val dialog = FileDialog(window).also {
-                    it.setFilenameFilter { _, name ->
-                        listOf("png", "jpg", "jpeg").contains(name.substringAfterLast(".").lowercase())
-                    }
+//                    it.setFilenameFilter { _, name ->
+//                        listOf("png", "jpg", "jpeg").contains(name.substringAfterLast(".").lowercase())
+//                    }
                     it.isVisible = true
                 }
 
