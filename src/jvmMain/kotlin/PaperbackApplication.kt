@@ -6,10 +6,12 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAbsoluteAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
@@ -117,14 +119,30 @@ fun UploadView(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().fillMaxHeight(0.25f),
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Text("Please select an image to upload")
+        }
+
+        val image = imagePath?.let {
+            try {
+                Image.convert(it)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
+        }
+
         Row {
-            Text("Click to upload a new photo", textAlign = TextAlign.Center)
+            if (imagePath == null)
+                Text("No image chosen.")
+            else
+                image?.awt()?.toComposeImageBitmap()?.let { Image(it, "") }
         }
         Spacer(Modifier.height(8.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // TODO: truncate file name
-            Text(imagePath?.fileName?.toString() ?: "No photo chosen")
-            Spacer(Modifier.width(4.dp))
+        Row {
             ChooseFileButton {
                 val dialog = FileDialog(window).also {
 //                    it.setFilenameFilter { _, name ->
@@ -135,21 +153,8 @@ fun UploadView(
 
                 dialog.file?.also { onImageSelect.invoke(File(dialog.directory, it).toPath()) }
             }
-        }
-        Spacer(Modifier.height(8.dp))
-        val image = imagePath?.let {
-            try {
-                Image.convert(it)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                null
-            }
-        }
-
-        image?.also {
-            Image(it.awt().toComposeImageBitmap(), "")
-            Spacer(Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            image?.also {
+                Spacer(Modifier.width(8.dp))
                 UploadButton {
                     manager.connection?.load(it)
                 }
@@ -163,7 +168,7 @@ fun ChooseFileButton(
     onClick: () -> Unit
 ) {
     Button(onClick) {
-        Text("Choose")
+        Text("Choose...")
     }
 }
 
